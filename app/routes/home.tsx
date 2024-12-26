@@ -1,5 +1,6 @@
 import { data, Form } from "react-router";
 import type { Route } from "./+types/home";
+import { createQRCodes } from "./create-qr-codes.server";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -8,14 +9,14 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export function action({ request }: Route.ActionArgs) {
+export async function action({ request }: Route.ActionArgs) {
   const playlistLink = new URL(request.url).searchParams.get("playlistLink");
   const matches = playlistLink?.match(playlistLinkPattern);
-  if (!matches) {
+  if (!matches || !playlistLink) {
     return data({ title: "Invalid playlist link" }, { status: 400 });
   }
 
-  console.log("Received link", playlistLink);
+  const qrCodes = await createQRCodes({ playlistLink });
   return null;
 }
 
@@ -37,6 +38,10 @@ export default function Home() {
             name="playlistLink"
             className="rounded-md px-4 py-3"
             required
+            // TODO: remove defaultValue
+            defaultValue={
+              "https://open.spotify.com/playlist/37i9dQZF1E8PF82uJv4bH4?si=cde9e5b42d824684"
+            }
             pattern={playlistLinkPattern}
             title="Please enter a valid Spotify playlist link like https://open.spotify.com/playlist/37i9dQZF1DWZy48MuOV69W"
           />
