@@ -1,4 +1,4 @@
-import { data, Form } from "react-router";
+import { data, Form, Link } from "react-router";
 import type { Route } from "./+types/home";
 import { createQRCodes } from "./create-qr-codes.server";
 
@@ -26,7 +26,12 @@ export default function Home() {
   return (
     <main className="h-full">
       <div className="grid place-items-center h-full">
-        <h1 className="text-5xl">Welcome to Trackster</h1>
+        <div className="flex flex-col gap-3">
+          <h1 className="text-5xl">Welcome to Trackster</h1>
+          <Link to="/connect" className="text-blue-500">
+            Connect Your Spotify Account
+          </Link>
+        </div>
         <Form className="flex flex-col self-start gap-3" method="post">
           <label htmlFor="playlistLink">
             Enter a link to your Spotify playlist
