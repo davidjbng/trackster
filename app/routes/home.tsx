@@ -1,4 +1,4 @@
-import { Form } from "react-router";
+import { data, Form } from "react-router";
 import type { Route } from "./+types/home";
 
 export function meta({}: Route.MetaArgs) {
@@ -8,11 +8,18 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export function action({ params, request }: Route.ActionArgs) {
+export function action({ request }: Route.ActionArgs) {
   const playlistLink = new URL(request.url).searchParams.get("playlistLink");
-  console.log(playlistLink);
+  const matches = playlistLink?.match(playlistLinkPattern);
+  if (!matches) {
+    return data({ title: "Invalid playlist link" }, { status: 400 });
+  }
+
+  console.log("Received link", playlistLink);
   return null;
 }
+
+const playlistLinkPattern = "https://open.spotify.com/playlist/[a-zA-Z0-9?=]+";
 
 export default function Home() {
   return (
@@ -30,6 +37,8 @@ export default function Home() {
             name="playlistLink"
             className="rounded-md px-4 py-3"
             required
+            pattern={playlistLinkPattern}
+            title="Please enter a valid Spotify playlist link like https://open.spotify.com/playlist/37i9dQZF1DWZy48MuOV69W"
           />
           <button
             type="submit"
