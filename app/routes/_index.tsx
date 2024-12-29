@@ -1,5 +1,5 @@
 import { data, Form, Link } from "react-router";
-import type { Route } from "./+types/home";
+import type { Route } from "./+types/_index";
 import { createQRCodes } from "./create-qr-codes.server";
 
 export function meta({}: Route.MetaArgs) {
@@ -7,6 +7,15 @@ export function meta({}: Route.MetaArgs) {
     { title: "Trackster" },
     { name: "description", content: "Create your own song guessing game" },
   ];
+}
+
+export async function loader({}: Route.LoaderArgs) {
+  const clientId = process.env.SPOTIFY_CLIENT_ID;
+  if (!clientId) {
+    throw new Error("Missing Spotify client ID");
+  }
+
+  return { clientId };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -22,13 +31,13 @@ export async function action({ request }: Route.ActionArgs) {
 
 const playlistLinkPattern = "https://open.spotify.com/playlist/[a-zA-Z0-9?=]+";
 
-export default function Home() {
+export default function Home({ loaderData }: Route.ComponentProps) {
   return (
     <main className="h-full">
       <div className="grid place-items-center h-full">
         <div className="flex flex-col gap-3">
-          <h1 className="text-5xl">Welcome to Trackster</h1>
-          <Link to="/connect" className="text-blue-500">
+          <h1 className="text-2xl">Welcome to Trackster</h1>
+          <Link to="connect" className="text-blue-500">
             Connect Your Spotify Account
           </Link>
         </div>
