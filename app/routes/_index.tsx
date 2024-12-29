@@ -33,21 +33,31 @@ export async function action({ request }: Route.ActionArgs) {
 const playlistLinkPattern = "https://open.spotify.com/playlist/[a-zA-Z0-9?=]+";
 
 export default function Home({ loaderData }: Route.ComponentProps) {
+  const { isLoggedIn } = loaderData;
   return (
     <main className="h-full">
       <div className="grid place-items-center h-full">
         <div className="flex flex-col gap-3">
           <h1 className="text-2xl">Welcome to Trackster</h1>
-          <pre>{JSON.stringify(loaderData, null, 3)}</pre>
-          <Link to="connect" className="text-blue-500">
-            Connect Your Spotify Account
-          </Link>
+          {isLoggedIn ? (
+            <div className="flex gap-3 items-center">
+              <p className="text-green-500">You are connected to Spotify</p>
+              <Link to="/logout" className="px-3 py-2 bg-red-500/60 rounded-lg">
+                Logout
+              </Link>
+            </div>
+          ) : (
+            <Link to="connect" className="text-blue-500">
+              Connect Your Spotify Account
+            </Link>
+          )}
         </div>
         <Form className="flex flex-col self-start gap-3" method="post">
           <label htmlFor="playlistLink">
             Enter a link to your Spotify playlist
           </label>
           <input
+            disabled={!loaderData.isLoggedIn}
             id="playlistLink"
             type="text"
             placeholder="Your playlist"
@@ -62,6 +72,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             title="Please enter a valid Spotify playlist link like https://open.spotify.com/playlist/37i9dQZF1DWZy48MuOV69W"
           />
           <button
+            disabled={!loaderData.isLoggedIn}
             type="submit"
             className="bg-green-700 rounded-lg px-4 py-3 mt-4 hover:bg-green-800"
           >
