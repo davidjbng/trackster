@@ -15,7 +15,6 @@ export function meta({}: Route.MetaArgs) {
 export async function loader({ request }: Route.LoaderArgs) {
   const session = await getSession(request.headers.get("Cookie"));
   const { clientId } = requireClientCredentials();
-  console.log("Loader Session data", session.data);
   if (session.has("token")) {
     const sdk = SpotifyApi.withAccessToken(clientId, session.get("token")!);
     const playlists = await sdk.currentUser.playlists.playlists();
