@@ -33,9 +33,7 @@ export async function loader({ request }: Route.ActionArgs) {
     );
     const tokenData = tokenResponseSchema.parse(await tokenResponse.json());
     const session = await getSession(request.headers.get("Cookie"));
-    session.set("accessToken", tokenData.access_token);
-    session.set("refreshToken", tokenData.refresh_token);
-    session.set("expiresIn", tokenData.expires_in);
+    session.set("token", tokenData);
     console.log("Connect session data", session.data);
     return redirect("/", {
       headers: {

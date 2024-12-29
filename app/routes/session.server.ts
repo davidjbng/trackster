@@ -1,9 +1,8 @@
+import type { AccessToken } from "@spotify/web-api-ts-sdk";
 import { createCookieSessionStorage } from "react-router";
 
 type SessionData = {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
+  token: AccessToken;
 };
 
 const secret = process.env.SPOTIFY_SESSION_SECRET;

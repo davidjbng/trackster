@@ -2,6 +2,8 @@ import { data, Form, Link } from "react-router";
 import type { Route } from "./+types/_index";
 import { createQRCodes } from "./create-qr-codes.server";
 import { getSession } from "./session.server";
+import { SpotifyApi } from "@spotify/web-api-ts-sdk";
+import { requireClientCredentials } from "./connect-config.server";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -12,9 +14,12 @@ export function meta({}: Route.MetaArgs) {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const session = await getSession(request.headers.get("Cookie"));
+  const { clientId } = requireClientCredentials();
   console.log("Loader Session data", session.data);
-  if (session.get("accessToken")) {
-    return { isLoggedIn: true };
+  if (session.has("token")) {
+    const sdk = SpotifyApi.withAccessToken(clientId, session.get("token")!);
+    const playlists = await sdk.currentUser.playlists.playlists();
+    return { isLoggedIn: true, playlists: playlists.items.map((p) => p.name) };
   }
   return { isLoggedIn: false };
 }
@@ -53,6 +58,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           )}
         </div>
         <Form className="flex flex-col self-start gap-3" method="post">
+          <pre>{JSON.stringify(loaderData.playlists, null, 3)}</pre>
           <label htmlFor="playlistLink">
             Enter a link to your Spotify playlist
           </label>
