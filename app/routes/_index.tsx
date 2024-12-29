@@ -1,6 +1,7 @@
 import { data, Form, Link } from "react-router";
 import type { Route } from "./+types/_index";
 import { createQRCodes } from "./create-qr-codes.server";
+import { getSession } from "./session.server";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -9,13 +10,13 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export async function loader({}: Route.LoaderArgs) {
-  const clientId = process.env.SPOTIFY_CLIENT_ID;
-  if (!clientId) {
-    throw new Error("Missing Spotify client ID");
+export async function loader({ request }: Route.LoaderArgs) {
+  const session = await getSession(request.headers.get("Cookie"));
+  console.log("Loader Session data", session.data);
+  if (session.get("accessToken")) {
+    return { isLoggedIn: true };
   }
-
-  return { clientId };
+  return { isLoggedIn: false };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -37,6 +38,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       <div className="grid place-items-center h-full">
         <div className="flex flex-col gap-3">
           <h1 className="text-2xl">Welcome to Trackster</h1>
+          <pre>{JSON.stringify(loaderData, null, 3)}</pre>
           <Link to="connect" className="text-blue-500">
             Connect Your Spotify Account
           </Link>
