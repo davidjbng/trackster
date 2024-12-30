@@ -15,7 +15,8 @@ const { getSession, commitSession, destroySession } =
     cookie: {
       name: "spotify-session",
       httpOnly: true,
-      sameSite: "strict",
+      // lax is required for safari to handle set-cookie header on a redirect
+      sameSite: "lax",
       secrets: [secret],
       secure: process.env.NODE_ENV === "production",
     },
