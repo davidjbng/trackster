@@ -1,10 +1,9 @@
 import { data, Form, Link } from "react-router";
 import type { Route } from "./+types/_index";
-import { createQRCodes } from "./create-qr-codes.server";
 import { getSession } from "./session.server";
-import { SpotifyApi, ClientCredentialsStrategy } from "@spotify/web-api-ts-sdk";
+import { SpotifyApi } from "@spotify/web-api-ts-sdk";
 import { requireClientCredentials } from "./connect-config.server";
-import { createReadStream } from "node:fs";
+import { useState } from "react";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -27,45 +26,12 @@ export async function loader({ request }: Route.LoaderArgs) {
   return { user: null };
 }
 
-async function initSpotifySdkFromSession(request: Request) {
-  const session = await getSession(request.headers.get("Cookie"));
-  const { clientId } = requireClientCredentials();
-  if (!session.has("token")) {
-    throw new Error("User is not logged in");
-  }
-
-  return SpotifyApi.withAccessToken(clientId, session.get("token")!);
-}
-
-export async function action({ request }: Route.ActionArgs) {
-  const formData = await request.formData();
-  const playlistId = formData.get("playlistId");
-  if (!playlistId || typeof playlistId !== "string") {
-    return data({ title: "Invalid playlist" }, { status: 400 });
-  }
-
-  console.log("Creating QR codes for playlist", playlistId);
-
-  const sdk = await initSpotifySdkFromSession(request);
-  const items = (await sdk.playlists.getPlaylistItems(playlistId)).items.map(
-    (i) => ({
-      href: i.track.href,
-      name: i.track.name,
-      artists: i.track.artists.map((a) => a.name).join(" "),
-    })
+export default function Home({ loaderData, actionData }: Route.ComponentProps) {
+  const { user } = loaderData;
+  const [selectedPlaylist, setSelectedPlaylist] = useState(
+    loaderData.playlists?.at(0)?.id
   );
 
-  const { zipFilePath } = await createQRCodes({ items });
-  return data(createReadStream(zipFilePath), {
-    headers: {
-      "Content-Type": "application/zip",
-      "Content-Disposition": `attachment; filename="qrcodes.zip"`,
-    },
-  });
-}
-
-export default function Home({ loaderData }: Route.ComponentProps) {
-  const { user } = loaderData;
   return (
     <main className="h-full">
       <div className="grid place-items-center h-full">
@@ -86,31 +52,38 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             </Link>
           )}
         </div>
-        <Form className="flex flex-col self-start gap-3" method="post">
-          <label htmlFor="playlist">Select your Spotify playlist</label>
-          <select
-            disabled={!loaderData.user}
-            id="playlist"
-            name="playlistId"
-            className="rounded-md px-4 py-3"
-            required
-          >
-            {loaderData.playlists?.map((playlist) => (
-              <option
-                key={playlist.id}
-                value={playlist.id}
-                label={playlist.name}
-              />
-            ))}
-          </select>
-          <button
-            disabled={!loaderData.user}
-            type="submit"
-            className="bg-green-700 rounded-lg px-4 py-3 mt-4 hover:bg-green-800"
-          >
-            Download QR Codes
-          </button>
-        </Form>
+        <div className="flex flex-col gap-3 self-start">
+          <Form className="flex flex-col gap-3">
+            <label htmlFor="playlist">Select your Spotify playlist</label>
+            <select
+              disabled={!loaderData.user}
+              id="playlist"
+              name="playlistId"
+              className="rounded-md px-4 py-3"
+              required
+              onChange={(e) => setSelectedPlaylist(e.target.value)}
+            >
+              {loaderData.playlists?.map((playlist, index) => (
+                <option
+                  selected={index === 0}
+                  key={playlist.id}
+                  value={playlist.id}
+                  label={playlist.name}
+                />
+              ))}
+            </select>
+          </Form>
+          {selectedPlaylist && (
+            <Link
+              to={`/download-qr-codes?playlistId=${selectedPlaylist}`}
+              className="bg-green-700 rounded-lg px-4 py-3 mt-4 hover:bg-green-800"
+              reloadDocument
+              download
+            >
+              QR Codes ready! Click here to download
+            </Link>
+          )}
+        </div>
       </div>
     </main>
   );
