@@ -4,6 +4,7 @@ import { createQRCodes } from "./create-qr-codes.server";
 import { getSession } from "./session.server";
 import { SpotifyApi, ClientCredentialsStrategy } from "@spotify/web-api-ts-sdk";
 import { requireClientCredentials } from "./connect-config.server";
+import { createReadStream } from "node:fs";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -46,8 +47,21 @@ export async function action({ request }: Route.ActionArgs) {
   console.log("Creating QR codes for playlist", playlistId);
 
   const sdk = await initSpotifySdkFromSession(request);
-  const qrCodes = await createQRCodes({ playlistId, sdk });
-  return null;
+  const items = (await sdk.playlists.getPlaylistItems(playlistId)).items.map(
+    (i) => ({
+      href: i.track.href,
+      name: i.track.name,
+      artists: i.track.artists.map((a) => a.name).join(" "),
+    })
+  );
+
+  const { zipFilePath } = await createQRCodes({ items });
+  return data(createReadStream(zipFilePath), {
+    headers: {
+      "Content-Type": "application/zip",
+      "Content-Disposition": `attachment; filename="qrcodes.zip"`,
+    },
+  });
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
