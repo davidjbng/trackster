@@ -9,7 +9,6 @@ import { z } from "zod";
 
 export async function loader({ request }: Route.ActionArgs) {
   const session = await getSession(request.headers.get("Cookie"));
-  console.log("Received callback with session", session.data);
   if (session.has("token")) {
     throw redirect("/");
   }
