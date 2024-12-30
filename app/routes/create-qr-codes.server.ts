@@ -7,8 +7,11 @@ export async function createQRCodes({
   playlistId: string;
   sdk: SpotifyApi;
 }) {
-  const profile = await sdk.currentUser.profile();
-  const tracks = await sdk.playlists.getPlaylistItems(playlistId);
-  console.table(tracks.items);
+  console.log("Getting playlist items for playlist", playlistId);
+  const playlistItems = await sdk.playlists.getPlaylistItems(playlistId);
+  console.log(
+    playlistItems.items.map((i) => ({ href: i.track.href, name: i.track.name }))
+  );
+  
   return {};
 }

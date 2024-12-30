@@ -14,13 +14,9 @@ export function meta({}: Route.MetaArgs) {
 
 export async function loader({ request }: Route.LoaderArgs) {
   const session = await getSession(request.headers.get("Cookie"));
-  const { clientId, clientSecret } = requireClientCredentials();
+  const { clientId } = requireClientCredentials();
   if (session.has("token")) {
-    const sdk = SpotifyApi.withAccessToken(
-      clientId,
-      clientSecret,
-      session.get("token")!
-    );
+    const sdk = SpotifyApi.withAccessToken(clientId, session.get("token")!);
     const playlists = await sdk.currentUser.playlists.playlists();
     return {
       user: await sdk.currentUser.profile(),
@@ -32,16 +28,12 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 async function initSpotifySdkFromSession(request: Request) {
   const session = await getSession(request.headers.get("Cookie"));
-  const { clientId, clientSecret } = requireClientCredentials();
+  const { clientId } = requireClientCredentials();
   if (!session.has("token")) {
     throw new Error("User is not logged in");
   }
 
-  return SpotifyApi.withAccessToken(
-    clientId,
-    clientSecret,
-    session.get("token")!
-  );
+  return SpotifyApi.withAccessToken(clientId, session.get("token")!);
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -82,21 +74,21 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         </div>
         <Form className="flex flex-col self-start gap-3" method="post">
           <label htmlFor="playlist">Select your Spotify playlist</label>
-          <input
+          <select
             disabled={!loaderData.user}
             id="playlist"
             name="playlistId"
-            type="text"
-            placeholder="Your playlist"
             className="rounded-md px-4 py-3"
             required
-            list="playlists"
-          />
-          <datalist id="playlists">
+          >
             {loaderData.playlists?.map((playlist) => (
-              <option key={playlist.id}>{playlist.name}</option>
+              <option
+                key={playlist.id}
+                value={playlist.id}
+                label={playlist.name}
+              />
             ))}
-          </datalist>
+          </select>
           <button
             disabled={!loaderData.user}
             type="submit"

@@ -4,11 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-patchedDependencies:
-  '@spotify/web-api-ts-sdk@1.2.0':
-    hash: vdol6h27kvccclads2ykwjgvuq
-    path: patches/@spotify__web-api-ts-sdk@1.2.0.patch
-
 importers:
 
   .:
@@ -24,7 +19,7 @@ importers:
         version: 7.1.1(react-router@7.1.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(typescript@5.7.2)
       '@spotify/web-api-ts-sdk':
         specifier: ^1.2.0
-        version: 1.2.0(patch_hash=vdol6h27kvccclads2ykwjgvuq)
+        version: 1.2.0
       isbot:
         specifier: ^5.1.17
         version: 5.1.18
@@ -2167,7 +2162,7 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.29.1':
     optional: true
 
-  '@spotify/web-api-ts-sdk@1.2.0(patch_hash=vdol6h27kvccclads2ykwjgvuq)': {}
+  '@spotify/web-api-ts-sdk@1.2.0': {}
 
   '@types/cookie@0.6.0': {}
 
