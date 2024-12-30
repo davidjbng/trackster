@@ -18,23 +18,36 @@ export async function loader({ request }: Route.LoaderArgs) {
   if (session.has("token")) {
     const sdk = SpotifyApi.withAccessToken(clientId, session.get("token")!);
     const playlists = await sdk.currentUser.playlists.playlists();
-    return { isLoggedIn: true, playlists: playlists.items.map((p) => p.name) };
+    return {
+      isLoggedIn: true,
+      playlists: playlists.items.map((p) => ({ name: p.name, id: p.id })),
+    };
   }
   return { isLoggedIn: false };
 }
 
-export async function action({ request }: Route.ActionArgs) {
-  const playlistLink = new URL(request.url).searchParams.get("playlistLink");
-  const matches = playlistLink?.match(playlistLinkPattern);
-  if (!matches || !playlistLink) {
-    return data({ title: "Invalid playlist link" }, { status: 400 });
+async function initSpotifySdkFromSession(request: Request) {
+  const session = await getSession(request.headers.get("Cookie"));
+  const { clientId } = requireClientCredentials();
+  if (!session.has("token")) {
+    throw new Error("User is not logged in");
   }
 
-  const qrCodes = await createQRCodes({ playlistLink });
-  return null;
+  return SpotifyApi.withAccessToken(clientId, session.get("token")!);
 }
 
-const playlistLinkPattern = "https://open.spotify.com/playlist/[a-zA-Z0-9?=]+";
+export async function action({ request }: Route.ActionArgs) {
+  console.log("Creating QR codes for playlist", request.url);
+  const formData = await request.formData();
+  const playlistId = formData.get("playlistId");
+  if (!playlistId || typeof playlistId !== "string") {
+    return data({ title: "Invalid playlist" }, { status: 400 });
+  }
+
+  const sdk = await initSpotifySdkFromSession(request);
+  const qrCodes = await createQRCodes({ playlistId, sdk });
+  return null;
+}
 
 export default function Home({ loaderData }: Route.ComponentProps) {
   const { isLoggedIn } = loaderData;
@@ -51,31 +64,28 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               </Link>
             </div>
           ) : (
-            <Link to="connect" className="text-blue-500">
+            <Link to="/connect" className="text-blue-500">
               Connect Your Spotify Account
             </Link>
           )}
         </div>
         <Form className="flex flex-col self-start gap-3" method="post">
-          <pre>{JSON.stringify(loaderData.playlists, null, 3)}</pre>
-          <label htmlFor="playlistLink">
-            Enter a link to your Spotify playlist
-          </label>
+          <label htmlFor="playlist">Select your Spotify playlist</label>
           <input
             disabled={!loaderData.isLoggedIn}
-            id="playlistLink"
+            id="playlist"
+            name="playlistId"
             type="text"
             placeholder="Your playlist"
-            name="playlistLink"
             className="rounded-md px-4 py-3"
             required
-            // TODO: remove defaultValue
-            defaultValue={
-              "https://open.spotify.com/playlist/37i9dQZF1E8PF82uJv4bH4?si=cde9e5b42d824684"
-            }
-            pattern={playlistLinkPattern}
-            title="Please enter a valid Spotify playlist link like https://open.spotify.com/playlist/37i9dQZF1DWZy48MuOV69W"
+            list="playlists"
           />
+          <datalist id="playlists">
+            {loaderData.playlists?.map((playlist) => (
+              <option key={playlist.id} value={playlist.name} />
+            ))}
+          </datalist>
           <button
             disabled={!loaderData.isLoggedIn}
             type="submit"
