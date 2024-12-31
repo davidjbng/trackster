@@ -61,10 +61,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             className="rounded-md px-4 py-3"
             required
             onChange={(e) => setSelectedPlaylist(e.target.value)}
+            defaultValue={selectedPlaylist}
           >
             {loaderData.playlists?.map((playlist, index) => (
               <option
-                selected={index === 0}
                 key={playlist.id}
                 value={playlist.id}
                 label={playlist.name}
