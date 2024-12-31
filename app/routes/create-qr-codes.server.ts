@@ -6,22 +6,26 @@ import os from "node:os";
 import { randomUUID } from "node:crypto";
 
 export async function createQRCodes({
-  items,
+  itemsChunks,
 }: {
-  items: { uri: string; name: string; artists: string }[];
+  itemsChunks: AsyncGenerator<{ uri: string; name: string; artists: string }[]>;
 }) {
   // create a zip file with qr codes
   const zip = new JSZip();
-  for (const item of items) {
-    const fileName =
-      `${item.name} - ${item.artists}`.replace(/[<>:"/\\|?*\x00-\x1F]/g, "_") +
-      ".png";
-    const filePath = path.join(os.tmpdir(), fileName);
-    const fileStream = createWriteStream(filePath);
-    await QRCode.toFileStream(fileStream, item.uri, {
-      errorCorrectionLevel: "high",
-    });
-    zip.file(path.basename(filePath), createReadStream(filePath));
+  for await (const items of itemsChunks) {
+    for (const item of items) {
+      const fileName =
+        `${item.name} - ${item.artists}`.replace(
+          /[<>:"/\\|?*\x00-\x1F]/g,
+          "_"
+        ) + ".png";
+      const filePath = path.join(os.tmpdir(), fileName);
+      const fileStream = createWriteStream(filePath);
+      await QRCode.toFileStream(fileStream, item.uri, {
+        errorCorrectionLevel: "high",
+      });
+      zip.file(path.basename(filePath), createReadStream(filePath));
+    }
   }
 
   const zipFilePath = path.join(os.tmpdir(), `${randomUUID()}.zip`);

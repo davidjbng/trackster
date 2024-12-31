@@ -5,7 +5,11 @@ import type { Route } from "./+types/download-qr-codes";
 import { createQRCodes } from "./create-qr-codes.server";
 import { getSession } from "./session.server";
 import { requireClientCredentials } from "./connect-config.server";
-import { SpotifyApi } from "@spotify/web-api-ts-sdk";
+import {
+  SpotifyApi,
+  type PlaylistedTrack,
+  type Track,
+} from "@spotify/web-api-ts-sdk";
 
 async function initSpotifySdkFromSession(request: Request) {
   const session = await getSession(request.headers.get("Cookie"));
@@ -25,15 +29,34 @@ export async function loader({ request }: Route.LoaderArgs) {
   }
 
   const sdk = await initSpotifySdkFromSession(request);
-  const items = (await sdk.playlists.getPlaylistItems(playlistId)).items.map(
-    (i) => ({
-      uri: i.track.external_urls.spotify,
-      name: i.track.name,
-      artists: i.track.artists.map((a) => a.name).join(" "),
-    })
-  );
+  async function* getAllPlaylistItems<TItem>(
+    playlistId: string,
+    selectFn: (item: PlaylistedTrack<Track>) => TItem
+  ) {
+    let offset = 0;
+    const limit = 20;
+    while (true) {
+      const { items, total } = await sdk.playlists.getPlaylistItems(
+        playlistId,
+        undefined,
+        undefined,
+        limit,
+        offset
+      );
+      yield items.map(selectFn);
+      offset += items.length;
+      if (offset >= total) {
+        break;
+      }
+    }
+  }
+  const itemsChunks = getAllPlaylistItems(playlistId, (item) => ({
+    uri: item.track.external_urls.spotify,
+    name: item.track.name,
+    artists: item.track.artists.map((a) => a.name).join(" "),
+  }));
 
-  const { zipFilePath } = await createQRCodes({ items });
+  const { zipFilePath } = await createQRCodes({ itemsChunks });
 
   return new Response(
     createReadableStreamFromReadable(createReadStream(zipFilePath)),
