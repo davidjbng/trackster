@@ -29,7 +29,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   const sdk = await initSpotifySdkFromSession(request);
   const items = (await sdk.playlists.getPlaylistItems(playlistId)).items.map(
     (i) => ({
-      href: i.track.href,
+      uri: i.track.external_urls.spotify,
       name: i.track.name,
       artists: i.track.artists.map((a) => a.name).join(" "),
     })

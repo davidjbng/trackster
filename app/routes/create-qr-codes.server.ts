@@ -8,7 +8,7 @@ import { randomUUID } from "node:crypto";
 export async function createQRCodes({
   items,
 }: {
-  items: { href: string; name: string; artists: string }[];
+  items: { uri: string; name: string; artists: string }[];
 }) {
   // create a zip file with qr codes
   const zip = new JSZip();
@@ -18,15 +18,13 @@ export async function createQRCodes({
       ".png";
     const filePath = path.join(os.tmpdir(), fileName);
     const fileStream = createWriteStream(filePath);
-    await QRCode.toFileStream(fileStream, item.href, {
+    await QRCode.toFileStream(fileStream, item.uri, {
       errorCorrectionLevel: "high",
     });
-    console.log("Created QR code for", item.name);
     zip.file(path.basename(filePath), createReadStream(filePath));
   }
 
   const zipFilePath = path.join(os.tmpdir(), `${randomUUID()}.zip`);
-  console.log("Creating zip file at", zipFilePath);
 
   await new Promise((resolve, reject) => {
     zip
