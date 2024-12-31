@@ -24,8 +24,6 @@ export async function loader({ request }: Route.LoaderArgs) {
     return data({ title: "Invalid playlist" }, { status: 400 });
   }
 
-  console.log("Creating QR codes for playlist", playlistId);
-
   const sdk = await initSpotifySdkFromSession(request);
   const items = (await sdk.playlists.getPlaylistItems(playlistId)).items.map(
     (i) => ({
