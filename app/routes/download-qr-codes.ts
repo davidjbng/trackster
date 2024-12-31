@@ -1,4 +1,5 @@
 import { data } from "react-router";
+import { createReadableStreamFromReadable } from "@react-router/node";
 import { createReadStream } from "fs";
 import type { Route } from "./+types/download-qr-codes";
 import { createQRCodes } from "./create-qr-codes.server";
@@ -35,10 +36,14 @@ export async function loader({ request }: Route.LoaderArgs) {
   );
 
   const { zipFilePath } = await createQRCodes({ items });
-  return data(createReadStream(zipFilePath), {
-    headers: {
-      "Content-Type": "application/zip",
-      "Content-Disposition": `attachment; filename="qrcodes.zip"`,
-    },
-  });
+
+  return new Response(
+    createReadableStreamFromReadable(createReadStream(zipFilePath)),
+    {
+      headers: {
+        "Content-Type": "application/zip",
+        "Content-Disposition": `attachment; filename="qr-codes.zip"`,
+      },
+    }
+  );
 }

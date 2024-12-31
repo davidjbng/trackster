@@ -33,7 +33,7 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
   );
 
   return (
-    <main className="h-full">
+    <main className="h-full px-2">
       <div className="grid place-items-center h-full">
         <div className="flex flex-col gap-3">
           <h1 className="text-2xl">Welcome to Trackster</h1>
@@ -53,34 +53,32 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
           )}
         </div>
         <div className="flex flex-col gap-3 self-start">
-          <Form className="flex flex-col gap-3">
-            <label htmlFor="playlist">Select your Spotify playlist</label>
-            <select
-              disabled={!loaderData.user}
-              id="playlist"
-              name="playlistId"
-              className="rounded-md px-4 py-3"
-              required
-              onChange={(e) => setSelectedPlaylist(e.target.value)}
-            >
-              {loaderData.playlists?.map((playlist, index) => (
-                <option
-                  selected={index === 0}
-                  key={playlist.id}
-                  value={playlist.id}
-                  label={playlist.name}
-                />
-              ))}
-            </select>
-          </Form>
+          <label htmlFor="playlist">Select your Spotify playlist</label>
+          <select
+            disabled={!loaderData.user}
+            id="playlist"
+            name="playlistId"
+            className="rounded-md px-4 py-3"
+            required
+            onChange={(e) => setSelectedPlaylist(e.target.value)}
+          >
+            {loaderData.playlists?.map((playlist, index) => (
+              <option
+                selected={index === 0}
+                key={playlist.id}
+                value={playlist.id}
+                label={playlist.name}
+              />
+            ))}
+          </select>
           {selectedPlaylist && (
             <Link
               to={`/download-qr-codes?playlistId=${selectedPlaylist}`}
-              className="bg-green-700 rounded-lg px-4 py-3 mt-4 hover:bg-green-800"
+              className="bg-green-700 self-center rounded-lg px-4 py-3 mt-4 hover:bg-green-800"
               reloadDocument
-              download
+              download="qr-codes.zip"
             >
-              QR Codes ready! Click here to download
+              Download QR Codes
             </Link>
           )}
         </div>
