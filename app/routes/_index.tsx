@@ -1,4 +1,4 @@
-import { data, Form, Link } from "react-router";
+import { Link } from "react-router";
 import type { Route } from "./+types/_index";
 import { getSession } from "./session.server";
 import { SpotifyApi } from "@spotify/web-api-ts-sdk";
@@ -26,7 +26,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   return { user: null };
 }
 
-export default function Home({ loaderData, actionData }: Route.ComponentProps) {
+export default function Home({ loaderData }: Route.ComponentProps) {
   const { user } = loaderData;
   const [selectedPlaylist, setSelectedPlaylist] = useState(
     loaderData.playlists?.at(0)?.id
