@@ -11,7 +11,7 @@ import {
   type Track,
 } from "@spotify/web-api-ts-sdk";
 
-async function initSpotifySdkFromSession(request: Request) {
+export async function initSpotifySdkFromSession(request: Request) {
   const session = await getSession(request.headers.get("Cookie"));
   const { clientId } = requireClientCredentials();
   if (!session.has("token")) {

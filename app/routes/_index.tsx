@@ -4,6 +4,7 @@ import { getSession } from "./session.server";
 import { SpotifyApi } from "@spotify/web-api-ts-sdk";
 import { requireClientCredentials } from "./connect-config.server";
 import { useState } from "react";
+import { initSpotifySdkFromSession } from "./download-qr-codes";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -18,12 +19,23 @@ export async function loader({ request }: Route.LoaderArgs) {
   if (session.has("token")) {
     const sdk = SpotifyApi.withAccessToken(clientId, session.get("token")!);
     const playlists = await sdk.currentUser.playlists.playlists();
+    const audiobookAlbums = await sdk.search("Hörbücher", ["album"]);
+
     return {
       user: await sdk.currentUser.profile(),
       playlists: playlists.items.map((p) => ({ name: p.name, id: p.id })),
+      audiobooks: audiobookAlbums.albums.items.map((album) => ({
+        name: album.name,
+        imageUrl: album.images.at(0)?.url,
+        id: album.id,
+      })),
     };
   }
   return { user: null };
+}
+
+export async function action({ request }: Route.ActionArgs) {
+  const sdk = await initSpotifySdkFromSession(request);
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
@@ -52,6 +64,14 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             </Link>
           )}
         </div>
+        <ul>
+          {loaderData.audiobooks?.map((audio) => (
+            <li key={audio.name}>
+              <img src={audio.imageUrl} alt={audio.name} />
+              <p>{audio.name}</p>
+            </li>
+          ))}
+        </ul>
         <div className="flex flex-col gap-3 self-start">
           <label htmlFor="playlist">Select your Spotify playlist</label>
           <select
