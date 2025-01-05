@@ -41,36 +41,34 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
   return (
     <main className="h-full px-2">
-      <div className="grid place-items-center h-full">
-        <div className="flex flex-col gap-3">
-          <h1 className="text-2xl">Welcome to Trackster</h1>
-          {user ? (
-            <div className="flex gap-3 items-center">
-              <p className="text-green-500">
-                You are logged in as {user.display_name}
-              </p>
-              <Link to="/logout" className="px-3 py-2 bg-red-500/60 rounded-lg">
-                Logout
-              </Link>
-            </div>
-          ) : (
-            <Link to="/connect" className="text-blue-500">
-              Connect Your Spotify Account
+      <header className="flex gap-3 items-center p-1">
+        <h1 className="text-lg flex-1">Hörbücher auf Spotify</h1>
+        {user ? (
+          <div className="flex gap-3 items-center">
+            <select
+              className="max-w-fit p-2 rounded-lg"
+              defaultValue={devices?.find((d) => d.is_active)?.id ?? undefined}
+            >
+              {devices?.map((device) => (
+                <option key={device.id} value={device.id ?? ""}>
+                  {device.name}
+                </option>
+              ))}
+            </select>
+            <p className="text-green-500">{user.display_name}</p>
+            <Link to="/logout" className="px-2 py-1 bg-red-500/60 rounded-lg">
+              Logout
             </Link>
-          )}
-        </div>
+          </div>
+        ) : (
+          <Link to="/connect" className="text-blue-500">
+            Login
+          </Link>
+        )}
+      </header>
+      <div className="grid place-items-center h-full">
         {/* <pre>{JSON.stringify(devices, null, 3)}</pre> */}
-        <select
-          className="w-full p-2 rounded-lg"
-          defaultValue={devices?.find((d) => d.is_active)?.id ?? undefined}
-        >
-          {devices?.map((device) => (
-            <option key={device.id} value={device.id ?? ""}>
-              {device.name}
-            </option>
-          ))}
-        </select>
-        <ul className="grid grid-cols-3 gap-x-4 gap-y-6 mt-8">
+        <ul className="grid sm:grid-cols-3 grid-cols-2 gap-x-4 gap-y-6 mt-8">
           {audiobooks?.map((audio) => (
             <li key={audio.name} className="flex flex-col gap-1">
               <img src={audio.imageUrl} alt={audio.name} />
