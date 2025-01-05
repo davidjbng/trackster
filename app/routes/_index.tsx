@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { Form, Link } from "react-router";
 import type { Route } from "./+types/_index";
 import { getSession } from "./session.server";
 import { SpotifyApi } from "@spotify/web-api-ts-sdk";
@@ -55,9 +55,22 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 </option>
               ))}
             </select>
-            <p className="text-green-500">{user.display_name}</p>
-            <Link to="/logout" className="px-2 py-1 bg-red-500/60 rounded-lg">
-              Logout
+            <Link to="/logout" className="flex gap-0.5 items-center">
+              <p>{user.display_name}</p>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="size-6"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9"
+                />
+              </svg>
             </Link>
           </div>
         ) : (
@@ -72,9 +85,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           {audiobooks?.map((audio) => (
             <li key={audio.name} className="flex flex-col gap-1">
               <img src={audio.imageUrl} alt={audio.name} />
-              <button className="bg-green-700 rounded-lg px-2 py-1 max-h-fit">
-                Play
-              </button>
+              <Form>
+                <button className="bg-green-700 rounded-lg px-2 py-1 max-h-fit">
+                  Play
+                </button>
+              </Form>
               <p className="line-clamp-3 flex-1">{audio.name}</p>
             </li>
           ))}
