@@ -1,7 +1,11 @@
 import { data, Form, Link } from "react-router";
 import type { Route } from "./+types/_index";
 import { getSession } from "./session.server";
-import { SpotifyApi } from "@spotify/web-api-ts-sdk";
+import {
+  SpotifyApi,
+  type PlaybackState,
+  type TrackItem,
+} from "@spotify/web-api-ts-sdk";
 import { requireClientCredentials } from "./connect-config.server";
 import { initSpotifySdkFromSession } from "./download-qr-codes";
 
@@ -53,7 +57,13 @@ export async function action({ request }: Route.ActionArgs) {
     throw new Error("No tracks found in album");
   }
 
-  sdk.player.startResumePlayback(device.id, `spotify:album:${albumId}`);
+  const playbackState = await sdk.player.getPlaybackState();
+  if (isPlayingAlbum(playbackState, album)) {
+    sdk.player.pausePlayback(device.id);
+    return data({ success: true });
+  } else {
+    sdk.player.startResumePlayback(device.id, `spotify:album:${albumId}`);
+  }
 
   return data({ success: true });
 }
@@ -122,10 +132,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </Link>
         )}
       </header>
-      <pre>{JSON.stringify(playbackState?.item.id, null, 3)}</pre>
       <div className="grid place-items-center h-full">
         <ul className="grid sm:grid-cols-3 grid-cols-2 gap-x-4 gap-y-6 mt-8">
           {audiobooksAlbums?.map((audio) => {
+            const isPlaying = isPlayingAlbum(playbackState, audio);
             return (
               <li key={audio.name} className="flex flex-col gap-1">
                 <img src={audio.imageUrl} alt={audio.name} />
@@ -135,7 +145,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                     name="albumId"
                     value={audio.id}
                   >
-                    Play
+                    {isPlaying ? "Pause" : "Play"}
                   </button>
                 </Form>
                 <p className="line-clamp-3 flex-1">{audio.name}</p>
@@ -146,4 +156,12 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       </div>
     </main>
   );
+}
+
+function isPlayingAlbum(state: ExtendedPlaybackState, album: { id: string }) {
+  return state.item.album?.id === album.id && state.is_playing;
+}
+
+interface ExtendedPlaybackState extends PlaybackState {
+  item: TrackItem & { album?: { id: string } };
 }
