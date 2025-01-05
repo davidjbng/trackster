@@ -3,7 +3,6 @@ import type { Route } from "./+types/_index";
 import { getSession } from "./session.server";
 import { SpotifyApi } from "@spotify/web-api-ts-sdk";
 import { requireClientCredentials } from "./connect-config.server";
-import { useState } from "react";
 import { initSpotifySdkFromSession } from "./download-qr-codes";
 
 export function meta({}: Route.MetaArgs) {
@@ -18,17 +17,16 @@ export async function loader({ request }: Route.LoaderArgs) {
   const { clientId } = requireClientCredentials();
   if (session.has("token")) {
     const sdk = SpotifyApi.withAccessToken(clientId, session.get("token")!);
-    const playlists = await sdk.currentUser.playlists.playlists();
     const audiobookAlbums = await sdk.search("Hörbücher", ["album"]);
 
     return {
       user: await sdk.currentUser.profile(),
-      playlists: playlists.items.map((p) => ({ name: p.name, id: p.id })),
       audiobooks: audiobookAlbums.albums.items.map((album) => ({
         name: album.name,
         imageUrl: album.images.at(0)?.url,
         id: album.id,
       })),
+      devices: (await sdk.player.getAvailableDevices()).devices,
     };
   }
   return { user: null };
@@ -39,10 +37,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
-  const { user } = loaderData;
-  const [selectedPlaylist, setSelectedPlaylist] = useState(
-    loaderData.playlists?.at(0)?.id
-  );
+  const { user, audiobooks, devices } = loaderData;
 
   return (
     <main className="h-full px-2">
@@ -64,44 +59,28 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             </Link>
           )}
         </div>
-        <ul>
-          {loaderData.audiobooks?.map((audio) => (
-            <li key={audio.name}>
+        {/* <pre>{JSON.stringify(devices, null, 3)}</pre> */}
+        <select
+          className="w-full p-2 rounded-lg"
+          defaultValue={devices?.find((d) => d.is_active)?.id ?? undefined}
+        >
+          {devices?.map((device) => (
+            <option key={device.id} value={device.id ?? ""}>
+              {device.name}
+            </option>
+          ))}
+        </select>
+        <ul className="grid grid-cols-3 gap-x-4 gap-y-6 mt-8">
+          {audiobooks?.map((audio) => (
+            <li key={audio.name} className="flex flex-col gap-1">
               <img src={audio.imageUrl} alt={audio.name} />
-              <p>{audio.name}</p>
+              <button className="bg-green-700 rounded-lg px-2 py-1 max-h-fit">
+                Play
+              </button>
+              <p className="line-clamp-3 flex-1">{audio.name}</p>
             </li>
           ))}
         </ul>
-        <div className="flex flex-col gap-3 self-start">
-          <label htmlFor="playlist">Select your Spotify playlist</label>
-          <select
-            disabled={!loaderData.user}
-            id="playlist"
-            name="playlistId"
-            className="rounded-md px-4 py-3"
-            required
-            onChange={(e) => setSelectedPlaylist(e.target.value)}
-            defaultValue={selectedPlaylist}
-          >
-            {loaderData.playlists?.map((playlist, index) => (
-              <option
-                key={playlist.id}
-                value={playlist.id}
-                label={playlist.name}
-              />
-            ))}
-          </select>
-          {selectedPlaylist && (
-            <Link
-              to={`/download-qr-codes?playlistId=${selectedPlaylist}`}
-              className="bg-green-700 self-center rounded-lg px-4 py-3 mt-4 hover:bg-green-800"
-              reloadDocument
-              download="qr-codes.zip"
-            >
-              Download QR Codes
-            </Link>
-          )}
-        </div>
       </div>
     </main>
   );

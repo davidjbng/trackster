@@ -12,7 +12,10 @@ export async function loader() {
   authorizeUrl.searchParams.set("client_id", clientId);
   authorizeUrl.searchParams.set("response_type", "code");
   authorizeUrl.searchParams.set("redirect_uri", requirectUri);
-  authorizeUrl.searchParams.set("scope", "playlist-read-private");
+  authorizeUrl.searchParams.set(
+    "scope",
+    "playlist-read-private user-read-playback-state user-modify-playback-state"
+  );
 
   return redirect(authorizeUrl.toString());
 }
