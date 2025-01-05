@@ -1,4 +1,4 @@
-import { Form, Link } from "react-router";
+import { data, Form, Link } from "react-router";
 import type { Route } from "./+types/_index";
 import { getSession } from "./session.server";
 import { SpotifyApi } from "@spotify/web-api-ts-sdk";
@@ -21,23 +21,45 @@ export async function loader({ request }: Route.LoaderArgs) {
 
     return {
       user: await sdk.currentUser.profile(),
-      audiobooks: audiobookAlbums.albums.items.map((album) => ({
+      audiobooksAlbums: audiobookAlbums.albums.items.map((album) => ({
         name: album.name,
         imageUrl: album.images.at(0)?.url,
         id: album.id,
       })),
       devices: (await sdk.player.getAvailableDevices()).devices,
+      playbackState: await sdk.player.getPlaybackState(),
     };
   }
   return { user: null };
 }
 
 export async function action({ request }: Route.ActionArgs) {
+  const formData = await request.formData();
+  const albumId = formData.get("albumId");
+  if (!albumId || typeof albumId !== "string") {
+    return data({ error: "No albumId provided" }, { status: 400 });
+  }
+
   const sdk = await initSpotifySdkFromSession(request);
+  const devices = (await sdk.player.getAvailableDevices()).devices;
+
+  const device = devices.find((d) => d.is_active) ?? devices.at(0);
+  if (!device?.id) {
+    throw new Error("No active device found");
+  }
+  const album = await sdk.albums.get(albumId);
+  const track = album.tracks.items.at(0);
+  if (!track) {
+    throw new Error("No tracks found in album");
+  }
+
+  sdk.player.startResumePlayback(device.id, `spotify:album:${albumId}`);
+
+  return data({ success: true });
 }
 
 export default function Home({ loaderData }: Route.ComponentProps) {
-  const { user, audiobooks, devices } = loaderData;
+  const { user, audiobooksAlbums, devices, playbackState } = loaderData;
 
   return (
     <main className="h-full px-2">
@@ -100,19 +122,26 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </Link>
         )}
       </header>
+      <pre>{JSON.stringify(playbackState?.item.id, null, 3)}</pre>
       <div className="grid place-items-center h-full">
         <ul className="grid sm:grid-cols-3 grid-cols-2 gap-x-4 gap-y-6 mt-8">
-          {audiobooks?.map((audio) => (
-            <li key={audio.name} className="flex flex-col gap-1">
-              <img src={audio.imageUrl} alt={audio.name} />
-              <Form>
-                <button className="bg-green-700 rounded-lg px-2 py-1 max-h-fit">
-                  Play
-                </button>
-              </Form>
-              <p className="line-clamp-3 flex-1">{audio.name}</p>
-            </li>
-          ))}
+          {audiobooksAlbums?.map((audio) => {
+            return (
+              <li key={audio.name} className="flex flex-col gap-1">
+                <img src={audio.imageUrl} alt={audio.name} />
+                <Form method="post">
+                  <button
+                    className="bg-green-700 rounded-lg px-2 py-1 max-h-fit"
+                    name="albumId"
+                    value={audio.id}
+                  >
+                    Play
+                  </button>
+                </Form>
+                <p className="line-clamp-3 flex-1">{audio.name}</p>
+              </li>
+            );
+          })}
         </ul>
       </div>
     </main>
